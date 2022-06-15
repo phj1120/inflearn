@@ -60,8 +60,12 @@ public class OrderService {
 
     /*
      * 검색
+     *
+     * 이렇게 위임만 하는 경우 controller 에서 repository 를 불러서 사용 하는 것도 고려.
+     * 이런거에 너무 얽메이지 말고 선택 하면 됨
      * */
     public List<Order> findOrders(OrderSearch orderSearch) {
+
         return orderRepository.findAllByCriteria(orderSearch);
     }
 
