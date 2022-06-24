@@ -3,7 +3,10 @@ package hello.springmvc.basic.request;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpMethod;
 import org.springframework.util.MultiValueMap;
-import org.springframework.web.bind.annotation.*;
+import org.springframework.web.bind.annotation.CookieValue;
+import org.springframework.web.bind.annotation.RequestHeader;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RestController;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
@@ -30,11 +33,5 @@ public class RequestHeaderController {
         log.info("header host={}", host);
         log.info("myCookie={}", cookie);
         return "ok";
-    }
-
-    // user 에 getter 있어야 함
-    @RequestMapping("/request-body")
-    public void reqeustBody(@RequestBody MyUser user) {
-        log.info("user.username={}, user.age={}", user.getUsername(), user.getAge());
     }
 }

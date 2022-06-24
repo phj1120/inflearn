@@ -2,20 +2,25 @@ package hello.springmvc.basic.request;
 
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.util.MultiValueMap;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestParam;
-import org.springframework.web.bind.annotation.ResponseBody;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.util.Map;
 
+/*
+ * 요청 파라미터로 받는 방법.
+ * @RequestParam, @ModelAttribute 생략 가능.
+ * HTTP 바디에 담아서 전송 하는 @RequestBody 와 전혀 다른 방법.
+ * */
 @Slf4j
 @RestController
 public class RequestParamController {
 
+    /**
+     * 반환 타입이 없으면서 이렇게 응답에 값을 직접 집어넣으면, view 조회X
+     */
     @RequestMapping("/request-param-v1")
     public void requestParamV1(HttpServletRequest request, HttpServletResponse response) throws IOException {
         String username = request.getParameter("username");
@@ -66,14 +71,8 @@ public class RequestParamController {
 
     /**
      * @RequestParam.required /request-param-required -> username이 없으므로 예외
-     * <p>
-     * 주의!
      * /request-param-required?username= -> 빈문자로 통과
-     * <p>
-     * 주의!
-     * /request-param-required
-     * int age -> null을 int에 입력하는 것은 불가능, 따라서 Integer 변경해야 함(또는 다음에 나오는
-     * defaultValue 사용)
+     * int age -> null을 int에 입력하는 것은 불가능, 따라서 Integer 변경해야 함(또는 다음에 나오는 defaultValue 사용)
      */
     @ResponseBody
     @RequestMapping("/request-param-required")
@@ -86,21 +85,24 @@ public class RequestParamController {
         return "ok";
     }
 
+    /**
+     * @RequestParam - defaultValue 사용
+     * 참고: defaultValue는 빈 문자의 경우에도 적용
+     * /request-param-default?username=
+     */
     @ResponseBody
     @RequestMapping("/request-param-default")
     public String requestParamDefault(
             @RequestParam(required = true, defaultValue = "guest") String username,
             @RequestParam(required = false, defaultValue = "-1") Integer age,
             String hobby) {
-
         log.info("username={}, age={}, hobby={}", username, age, hobby);
         return "ok";
     }
 
     /**
-     * @RequestParam Map, MultiValueMap
+     * @RequestParam Map
      * Map(key=value)
-     * MultiValueMap(key=[value1, value2, ...]) ex) (key=userIds, value=[id1, id2])
      */
     @ResponseBody
     @RequestMapping("/request-param-map")
@@ -110,6 +112,10 @@ public class RequestParamController {
         return "ok";
     }
 
+    /**
+     * @RequestParam MultiValueMap
+     * MultiValueMap(key=[value1, value2, ...]) ex) (key=userIds, value=[id1, id2])
+     */
     @ResponseBody
     @RequestMapping("/request-param-multi-value-map")
     public String requestParamMultiValueMap(@RequestParam MultiValueMap<String, Object> paramMap) {
@@ -118,5 +124,46 @@ public class RequestParamController {
         return "ok";
     }
 
+    /**
+     * @ModelAttribute 사용 전
+     * 필요한 값들을 파라미터로 받아 객체를 생성하고 직접 삽입
+     * http://localhost:8080/model-attribute-before?username=phj&age=25
+     */
+    @ResponseBody
+    @RequestMapping("/model-attribute-before")
+    public String modelAttributeV0(String username, Integer age) {
+        HelloData data = new HelloData();
+        data.setUsername(username);
+        data.setAge(age);
 
+        log.info("username={}, age={}", username, age);
+        return "ok";
+    }
+
+    /**
+     * @ModelAttribute 사용
+     * 참고: model.addAttribute(helloData) 코드도 함께 자동 적용됨, 뒤에 model을 설명할 때
+     * 자세히 설명
+     * http://localhost:8080/model-attribute-v1?username=phj&age=25
+     */
+    @ResponseBody
+    @RequestMapping("/model-attribute-v1")
+    public String modelAttributeV1(@ModelAttribute HelloData helloData) {
+        log.info("username={}, age={}", helloData.getUsername(), helloData.getAge());
+        return "ok";
+    }
+
+    /**
+     * @ModelAttribute 생략 가능
+     * String, int 같은 단순 타입 = @RequestParam
+     * argument resolver 로 지정해둔 타입 외 = @ModelAttribute
+     * http://localhost:8080/model-attribute-v2?username=phj&age=25
+     */
+    @ResponseBody
+    @RequestMapping("/model-attribute-v2")
+    public String modelAttributeV2(HelloData helloData) {
+        log.info("username={}, age={}", helloData.getUsername(),
+                helloData.getAge());
+        return "ok";
+    }
 }
