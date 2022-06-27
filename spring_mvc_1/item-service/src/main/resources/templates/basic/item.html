@@ -14,6 +14,8 @@
     <div class="py-5 text-center">
         <h2>상품 상세</h2>
     </div>
+    <!--    <h2 th:if="${param.status}" th:text="'저장 완료'"></h2>-->
+
     <div>
         <label for="itemId">상품 ID</label>
         <input type="text" id="itemId" name="itemId" class="form-control"
@@ -52,3 +54,12 @@
 </div> <!-- /container -->
 </body>
 </html>
+
+<script th:inline="javascript">
+    window.onload = function () {
+        let status = [[${param.status}]][0] // 왜 인지는 모르겠는데 여기서 받으면 list 로 받아옴
+        if (status) {
+            window.alert("저장 완료")
+        }
+    };
+</script>
