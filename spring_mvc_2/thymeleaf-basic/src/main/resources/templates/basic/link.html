@@ -14,9 +14,20 @@
         <span th:utext="/hello?param1=data1&param2=data2"></span>
         배웠던대로 utext 에 넣어봤는데 이건 컨트롤러에서 넘어온게 아니라 제대로 안 됨...
         검색해도 안나오고 나중에 구글링 실력 늘면 찾아보기
-    -->
 
-    /hello?param1=data1& param2=data2
+        키워드 : html & 표시
+        &amp;
+    -->
+    <!--    /hello?param1=data1&param2=data2 이 바로 보이게 하고 싶음  -->
+    <p th:text="'/hello?param1=data1&'+'param2=data2'"></p> <!--  원하는 결과로 출력  -->
+
+    <p th:utext="'/hello?param1=data1&'+'param2=data2'"></p>
+
+    <p th:text="'/hello?param1=data1&amp;param2=data2'"></p> <!--  원하는 결과로 출력  -->
+
+    <p th:utext="'/hello?param1=data1&amp;param2=data2'"></p>
+
+    /hello?param1=data1\&param2=data2
     <li><a th:href="@{/hello(param1=${param1}, param2=${param2})}">hello query param</a></li>
 
     /hello/{param1}/{param2}
