@@ -6,6 +6,7 @@ import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 
 import javax.servlet.http.HttpSession;
 import java.time.LocalDateTime;
@@ -90,12 +91,33 @@ public class BasicController {
     }
 
     @GetMapping("/attribute")
-    public String attribute() {
+    public String attribute(@RequestParam Boolean isCheckedController, Model model) {
+        model.addAttribute("isCheckedController", isCheckedController);
         return "/basic/attribute";
     }
 
+    @GetMapping("/each")
+    public String each(Model model) {
+        addUsers(model);
 
+        return "/basic/each";
+    }
 
+    @GetMapping("/condition")
+    public String condition(Model model) {
+        addUsers(model);
+
+        return "/basic/condition";
+    }
+
+    private void addUsers(Model model) {
+        List<User> list = new ArrayList<>();
+        list.add(new User("UserA", 10));
+        list.add(new User("UserB", 20));
+        list.add(new User("UserC", 30));
+
+        model.addAttribute("users", list);
+    }
 
 
     @Data
