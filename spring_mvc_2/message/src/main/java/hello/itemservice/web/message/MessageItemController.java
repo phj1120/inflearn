@@ -20,6 +20,7 @@ public class MessageItemController {
     @GetMapping
     public String items(Model model) {
         List<Item> items = itemRepository.findAll();
+        model.addAttribute("username", "PHJ");
         model.addAttribute("items", items);
         return "message/items";
     }
