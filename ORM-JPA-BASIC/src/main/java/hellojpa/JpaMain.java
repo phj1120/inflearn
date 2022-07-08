@@ -15,27 +15,22 @@ public class JpaMain {
         tx.begin();
 
         try {
-            Member member = new Member(1L, "phj");
-            em.persist(member);
+            Member findMember1 = em.find(Member.class, 1L);
 
-            System.out.println("==== BEFORE FLUSH ====");
-            em.flush();
-            System.out.println("==== AFTER FLUSH ====");
+            System.out.println("==== BEFORE CLEAR ====");
+            // em.detach(findMember1);
+            em.clear();
+            System.out.println("==== AFTER CLEAR ====");
 
-            Member findMember = em.find(Member.class, 1L);
-            findMember.setName("parkh");
+            Member findMember2 = em.find(Member.class, 1L);
 
-            System.out.println("==== BEFORE COMMIT ====");
             tx.commit();
-            System.out.println("==== AFTER COMMIT ====");
 
         } catch (Exception e) {
             tx.rollback();
         } finally {
             em.close();
         }
-
-
         emf.close();
     }
 }
