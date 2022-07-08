@@ -9,38 +9,32 @@ public class JpaMain {
 
     public static void main(String[] args) {
         EntityManagerFactory emf = Persistence.createEntityManagerFactory("hello");
-
         EntityManager em = emf.createEntityManager();
 
         EntityTransaction tx = em.getTransaction();
         tx.begin();
 
         try {
-            Member findMember = em.find(Member.class, 1L);
-            System.out.println("findMember.getId() = " + findMember.getId());
-            System.out.println("findMember.getName() = " + findMember.getName());
+            Member member = new Member(1L, "phj");
+            em.persist(member);
 
+            System.out.println("==== BEFORE FLUSH ====");
+            em.flush();
+            System.out.println("==== AFTER FLUSH ====");
+
+            Member findMember = em.find(Member.class, 1L);
             findMember.setName("parkh");
+
+            System.out.println("==== BEFORE COMMIT ====");
             tx.commit();
+            System.out.println("==== AFTER COMMIT ====");
+
         } catch (Exception e) {
             tx.rollback();
         } finally {
             em.close();
         }
 
-//        try {
-//            // code
-//            Member member = new Member();
-//            member.setId(5L);
-//            member.setName("phj");
-//            em.persist(member);
-//
-//            tx.commit();
-//        } catch (Exception e) {
-//            tx.rollback();
-//        } finally {
-//            em.close();
-//        }
 
         emf.close();
     }
