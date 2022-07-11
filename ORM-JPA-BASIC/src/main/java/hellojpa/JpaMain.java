@@ -15,16 +15,24 @@ public class JpaMain {
         tx.begin();
 
         try {
-            Member findMember1 = em.find(Member.class, 1L);
+            Member member1 = new Member();
+            member1.setUsername("phj");
 
-            System.out.println("==== BEFORE CLEAR ====");
-            // em.detach(findMember1);
-            em.clear();
-            System.out.println("==== AFTER CLEAR ====");
+            Member member2 = new Member();
+            member2.setUsername("phj");
 
-            Member findMember2 = em.find(Member.class, 1L);
+            Member member3 = new Member();
+            member3.setUsername("phj");
 
+            System.out.println("==== Before persist ====");
+            em.persist(member1);
+            em.persist(member2);
+            em.persist(member3);
+            System.out.println("==== After persist ====");
+
+            System.out.println("==== Before commit ====");
             tx.commit();
+            System.out.println("==== After commit ====");
 
         } catch (Exception e) {
             tx.rollback();
