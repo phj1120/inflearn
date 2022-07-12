@@ -15,25 +15,7 @@ public class JpaMain {
         tx.begin();
 
         try {
-            Member member1 = new Member();
-            member1.setUsername("phj");
-
-            Member member2 = new Member();
-            member2.setUsername("phj");
-
-            Member member3 = new Member();
-            member3.setUsername("phj");
-
-            System.out.println("==== Before persist ====");
-            em.persist(member1);
-            em.persist(member2);
-            em.persist(member3);
-            System.out.println("==== After persist ====");
-
-            System.out.println("==== Before commit ====");
             tx.commit();
-            System.out.println("==== After commit ====");
-
         } catch (Exception e) {
             tx.rollback();
         } finally {
