@@ -16,6 +16,9 @@ public class Member {
     private String street;
     private String zipcode;
 
+    @OneToMany
+
+
     public Long getId() {
         return id;
     }
