@@ -6,7 +6,6 @@ import lombok.ToString;
 
 import javax.persistence.*;
 
-@ToString
 @Entity
 @Getter
 @Setter
@@ -23,4 +22,9 @@ public class Member {
     @ManyToOne
     @JoinColumn(name = "TEAM_ID")
     private Team team;
+
+    public void changeTeam(Team team) {
+        this.team = team;
+        team.getMembers().add(this);
+    }
 }
