@@ -15,14 +15,19 @@ public class JpaMain {
         tx.begin();
 
         try {
-            Member member = new Member();
-            member.setUsername("phj");
-            em.persist(member);
-
             Team team = new Team();
             team.setName("mjc");
-            team.getMembers().add(member);
             em.persist(team);
+
+            Locker locker = new Locker();
+            locker.setName("A");
+            em.persist(locker);
+
+            Member member = new Member();
+            member.setUsername("phj");
+            member.setTeam(team);
+            member.setLocker(locker);
+            em.persist(member);
 
             tx.commit();
         } catch (Exception e) {

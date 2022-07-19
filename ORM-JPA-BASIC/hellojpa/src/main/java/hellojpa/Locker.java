@@ -11,12 +11,13 @@ import javax.persistence.Id;
 @Entity
 @Getter
 @Setter
-public class Team {
+public class Locker {
 
     @Id
     @GeneratedValue
-    @Column(name = "TEAM_ID")
+    @Column(name = "LOCKER_ID")
     private Long id;
 
     private String name;
+
 }
