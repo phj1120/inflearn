@@ -2,9 +2,11 @@ package hellojpa;
 
 import lombok.Getter;
 import lombok.Setter;
-import lombok.ToString;
 
-import javax.persistence.*;
+import javax.persistence.Column;
+import javax.persistence.Entity;
+import javax.persistence.GeneratedValue;
+import javax.persistence.Id;
 
 @Entity
 @Getter
@@ -18,13 +20,4 @@ public class Member {
 
     @Column(name = "name")
     private String username;
-
-    @ManyToOne
-    @JoinColumn(name = "TEAM_ID")
-    private Team team;
-
-    public void changeTeam(Team team) {
-        this.team = team;
-        team.getMembers().add(this);
-    }
 }
