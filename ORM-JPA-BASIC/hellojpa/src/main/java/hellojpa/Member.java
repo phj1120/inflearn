@@ -31,7 +31,7 @@ public class Member {
 
     @ManyToMany
     @JoinTable(name = "MEMBER_PRODUCT")
-    private List<Member> members = new ArrayList<>();
+    private List<Product> products = new ArrayList<>();
 
     public void deploymentLocker(Locker locker) {
         locker.setMember(this);
