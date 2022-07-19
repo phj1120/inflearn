@@ -29,9 +29,8 @@ public class Member {
     @JoinColumn(name = "LOCKER_ID")
     private Locker locker;
 
-    @ManyToMany
-    @JoinTable(name = "MEMBER_PRODUCT")
-    private List<Product> products = new ArrayList<>();
+    @OneToMany(mappedBy = "product")
+    private List<MemberProduct> memberProducts = new ArrayList<>();
 
     public void deploymentLocker(Locker locker) {
         locker.setMember(this);
