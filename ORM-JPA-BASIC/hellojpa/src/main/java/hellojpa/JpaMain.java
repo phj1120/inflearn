@@ -26,8 +26,11 @@ public class JpaMain {
             Member member = new Member();
             member.setUsername("phj");
             member.setTeam(team);
-            member.setLocker(locker);
+            member.deploymentLocker(locker);
             em.persist(member);
+
+            Member lockerMember = locker.getMember();
+            System.out.println("lockerMember = " + lockerMember);
 
             tx.commit();
         } catch (Exception e) {

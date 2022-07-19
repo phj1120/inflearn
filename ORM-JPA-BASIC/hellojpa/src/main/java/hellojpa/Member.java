@@ -25,4 +25,9 @@ public class Member {
     @OneToOne
     @JoinColumn(name = "LOCKER_ID")
     private Locker locker;
+
+    public void deploymentLocker(Locker locker) {
+        locker.setMember(this);
+        this.locker = locker;
+    }
 }
