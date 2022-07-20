@@ -3,3 +3,4 @@ etc
 solo
 *.idea
 .gradle
+*target
