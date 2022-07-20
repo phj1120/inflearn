@@ -29,8 +29,19 @@ public class JpaMain {
             member.deploymentLocker(locker);
             em.persist(member);
 
-            Member lockerMember = locker.getMember();
-            System.out.println("lockerMember = " + lockerMember);
+            Movie movie = new Movie();
+            movie.setName("탑건");
+            movie.setActor("톰쿠르즈");
+            movie.setDirector("phj");
+            movie.setPrice(12000);
+            em.persist(movie);
+            System.out.println("movie = " + movie);
+
+            em.flush();
+            em.clear();
+
+            Movie findMovie = em.find(Movie.class, movie.getId());
+            System.out.println("findMovie = " + findMovie);
 
             tx.commit();
         } catch (Exception e) {
