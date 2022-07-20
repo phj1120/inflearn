@@ -1,4 +1,5 @@
 *.DS_Store
 etc
+solo
 *.idea
 .gradle
