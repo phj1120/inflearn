@@ -1,8 +1,9 @@
 package jpabook.jpashop;
 
-import jpabook.jpashop.domain.Member;
 import jpabook.jpashop.domain.Order;
 import jpabook.jpashop.domain.OrderItem;
+import jpabook.jpashop.domain.item.Album;
+import jpabook.jpashop.domain.item.Movie;
 
 import javax.persistence.EntityManager;
 import javax.persistence.EntityManagerFactory;
@@ -18,8 +19,20 @@ public class JpaMain {
 
         tx.begin();
         try {
-            Order order = new Order();
-            order.addOrderItem(new OrderItem());
+            Album album = new Album();
+            album.setName("책갈피");
+            album.setPrice(12000);
+            album.setStockQuantity(10);
+            album.setArtist("아이유");
+            em.persist(album);
+
+            Movie movie = new Movie();
+            movie.setName("탑건2");
+            movie.setPrice(15000);
+            movie.setStockQuantity(1);
+            movie.setActor("톰크루즈");
+            movie.setDirector("박현준");
+            em.persist(movie);
 
             tx.commit();
         } catch (Exception e) {
