@@ -4,6 +4,8 @@ import lombok.Getter;
 import lombok.Setter;
 
 import javax.persistence.*;
+import java.util.ArrayList;
+import java.util.List;
 
 @Entity
 @Getter
@@ -21,4 +23,12 @@ public class Member extends BaseEntity {
     @ManyToOne
     @JoinColumn(name = "TEAM_ID")
     private Team team;
+
+    @OneToMany(mappedBy = "friend")
+    private List<Member> friends = new ArrayList<>();
+
+    @ManyToOne
+    @JoinColumn(name = "friend_id")
+    private Member friend;
+
 }
