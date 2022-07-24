@@ -24,11 +24,24 @@ public class Member extends BaseEntity {
     @JoinColumn(name = "TEAM_ID")
     private Team team;
 
-    @OneToMany(mappedBy = "friend")
-    private List<Member> friends = new ArrayList<>();
+//    @OneToMany(mappedBy = "friend")
+//    private List<Member> friends = new ArrayList<>();
+//
+//    @ManyToOne
+//    @JoinColumn(name = "friend_id")
+//    private Member friend;
 
-    @ManyToOne
-    @JoinColumn(name = "friend_id")
-    private Member friend;
+    @ManyToMany
+    @JoinTable(name = "MEMBER_MEMBER")
+    private List<Member> requesterMember = new ArrayList<>();
+
+    @ManyToMany(mappedBy = "requesterMember")
+    private List<Member> targetMember = new ArrayList<>();
+
+    public void addFriend(Member member) {
+        this.requesterMember.add(member);
+        member.targetMember.add(this);
+    }
+
 
 }
