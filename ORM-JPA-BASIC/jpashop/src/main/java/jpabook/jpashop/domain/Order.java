@@ -8,6 +8,8 @@ import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 
+import static javax.persistence.FetchType.*;
+
 
 @Getter
 @Setter
@@ -22,7 +24,7 @@ public class Order extends BaseEntity {
 
     // Order 입장에서 Member 는 ManyToOne : 나를 주문한 회원은 하나니까.
     // Member 입장에서 Order 는 OneToMany : 하나의 회원이 여러 주문을 할 수 있으니까
-    @ManyToOne
+    @ManyToOne(fetch = LAZY)
     @JoinColumn(name = "MEMBER_ID")
     private Member member;
 
@@ -34,7 +36,7 @@ public class Order extends BaseEntity {
     @Enumerated(EnumType.STRING)
     private OrderStatus status;
 
-    @OneToOne
+    @OneToOne(fetch = LAZY)
     @JoinColumn(name = "DELIVERY_ID")
     private Delivery delivery;
 
