@@ -33,4 +33,10 @@ public class Member {
 
     @OneToMany(mappedBy = "member")
     private List<Order> orders = new ArrayList<>();
+
+    public void changeTeam(Team team) {
+        team.getMembers().add(this);
+        this.team = team;
+    }
+
 }
