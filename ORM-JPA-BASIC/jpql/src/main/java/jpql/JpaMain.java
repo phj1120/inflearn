@@ -1,9 +1,6 @@
 package jpql;
 
-import javax.persistence.EntityManager;
-import javax.persistence.EntityManagerFactory;
-import javax.persistence.EntityTransaction;
-import javax.persistence.Persistence;
+import javax.persistence.*;
 import java.util.List;
 
 public class JpaMain {
@@ -22,17 +19,28 @@ public class JpaMain {
 
             Member member = new Member();
             member.setUsername("phj");
+            member.setAge(25);
             member.setTeam(team);
             em.persist(member);
 
             em.flush();
             em.clear();
 
-            List<Member> result1 = em.createQuery("select m from Member m").getResultList();
-            System.out.println("select m from Member m = " + result1);
 
-            List<Team> result2 = em.createQuery("select m.team from Member m", Team.class).getResultList();
-            System.out.println("select m.team from Member m = " + result2);
+            TypedQuery<Member> typeQuery = em.createQuery("select m from Member m", Member.class);
+
+            Query query = em.createQuery("select m.username, m.age from Member m");
+
+            List<Member> resultList = em.createQuery("select m from Member m", Member.class)
+                    .getResultList();
+            for (Member m : resultList) {
+                System.out.println("member = " + m);
+            }
+
+            Member singleResult = em.createQuery("select m from Member m where m.username = :username", Member.class)
+                    .setParameter("username", "phj")
+                    .getSingleResult();
+            System.out.println("singleResult.getUsername() = " + singleResult.getUsername());
 
             tx.commit();
         } catch (Exception e) {
