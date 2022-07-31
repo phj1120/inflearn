@@ -19,6 +19,10 @@ public class Member {
     @Embedded
     private Address address;
 
+    @ManyToOne
+    @JoinColumn(name = "TEAM_ID")
+    private Team team;
+
     public Member() {
     }
 
@@ -58,5 +62,13 @@ public class Member {
 
     public void setAddress(Address address) {
         this.address = address;
+    }
+
+    public Team getTeam() {
+        return team;
+    }
+
+    public void setTeam(Team team) {
+        this.team = team;
     }
 }
