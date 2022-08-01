@@ -33,7 +33,6 @@ public class JpaMain {
 
             for (int i = 5; i < 10; i++) {
                 Member member = new Member();
-                member.setUsername("phj" + i);
                 member.setAge(i);
                 member.changeTeam(team2);
                 member.setType(MemberType.USER);
@@ -45,20 +44,40 @@ public class JpaMain {
 
             String query;
             System.out.println("=====================================================================");
-            query = "select m.username, 'HELLO' from Member m " +
-                    "where m.type = :userType";
-            System.out.println(query);
-            List<Object[]> resultList1 = em.createQuery(query)
-                    .setParameter("userType", MemberType.ADMIN)
+            query = "select " +
+                    "case when m.age <= 10 then '학생요금' " +
+                    "     when m.age >= 60 then '경로요금' " +
+                    "     else '일반요금' " +
+                    "end " +
+                    "from Member m";
+            List<String> resultList1 = em.createQuery(query, String.class)
                     .getResultList();
 
-            for (Object[] objects : resultList1) {
-                System.out.println("object[0] = " + objects[0]);
-                System.out.println("object[1] = " + objects[1]);
+            for (String s : resultList1) {
+                System.out.println("s = " + s);
             }
             System.out.println("=====================================================================");
 
+            query = "select coalesce(m.username, '이름 없는 회원') as username " +
+                    "from Member m";
+            List<String> resultList2 = em.createQuery(query, String.class)
+                    .getResultList();
 
+            for (String s : resultList2) {
+                System.out.println("s = " + s);
+            }
+            System.out.println("=====================================================================");
+
+            query = "select nullif(m.username, :username) " +
+                    "from Member m";
+            List<String> resultList3 = em.createQuery(query, String.class)
+                    .setParameter("username", "phj0")
+                    .getResultList();
+
+            for (String s : resultList3) {
+                System.out.println("s = " + s);
+            }
+            System.out.println("=====================================================================");
 
             tx.commit();
         } catch (Exception e) {
