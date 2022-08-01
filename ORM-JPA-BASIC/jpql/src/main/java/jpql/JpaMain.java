@@ -27,6 +27,7 @@ public class JpaMain {
                 member.setUsername("phj" + i);
                 member.setAge(i);
                 member.changeTeam(team1);
+                member.setType(MemberType.ADMIN);
                 em.persist(member);
             }
 
@@ -35,6 +36,7 @@ public class JpaMain {
                 member.setUsername("phj" + i);
                 member.setAge(i);
                 member.changeTeam(team2);
+                member.setType(MemberType.USER);
                 em.persist(member);
             }
 
@@ -43,34 +45,19 @@ public class JpaMain {
 
             String query;
             System.out.println("=====================================================================");
-            query = "select m from Member m where m.age > (select avg(m2.age) from Member m2)";
+            query = "select m.username, 'HELLO' from Member m " +
+                    "where m.type = :userType";
             System.out.println(query);
-            List<Member> resultList1 = em.createQuery(query, Member.class)
+            List<Object[]> resultList1 = em.createQuery(query)
+                    .setParameter("userType", MemberType.ADMIN)
                     .getResultList();
-            for (Member m : resultList1) {
-                System.out.println("m.getUsername() = " + m.getUsername());
+
+            for (Object[] objects : resultList1) {
+                System.out.println("object[0] = " + objects[0]);
+                System.out.println("object[1] = " + objects[1]);
             }
             System.out.println("=====================================================================");
 
-            System.out.println("=====================================================================");
-            query = "select m from Member m where exists (select t from m.team t where t.name='mjc')";
-            System.out.println(query);
-            List<Member> resultList2 = em.createQuery(query, Member.class)
-                    .getResultList();
-            for (Member m : resultList2) {
-                System.out.println("m.getUsername() = " + m.getUsername());
-            }
-            System.out.println("=====================================================================");
-
-            System.out.println("=====================================================================");
-            query = "select m from Member m where m.team = any (select t from Team t)";
-            System.out.println(query);
-            List<Member> resultList3 = em.createQuery(query, Member.class)
-                    .getResultList();
-            for (Member m : resultList3) {
-                System.out.println("m.getUsername() = " + m.getUsername());
-            }
-            System.out.println("=====================================================================");
 
 
             tx.commit();
