@@ -44,40 +44,28 @@ public class JpaMain {
 
             String query;
             System.out.println("=====================================================================");
-            query = "select " +
-                    "case when m.age <= 10 then '학생요금' " +
-                    "     when m.age >= 60 then '경로요금' " +
-                    "     else '일반요금' " +
-                    "end " +
-                    "from Member m";
+            query = "select 'a' || 'b' from Member m";
+            query = "select concat('a', 'b') from Member m";
+            query = "select substring(m.username, 0, 3) from Member m";
+
             List<String> resultList1 = em.createQuery(query, String.class)
                     .getResultList();
 
             for (String s : resultList1) {
                 System.out.println("s = " + s);
             }
-            System.out.println("=====================================================================");
 
-            query = "select coalesce(m.username, '이름 없는 회원') as username " +
-                    "from Member m";
+            System.out.println("=====================================================================");
+            query = "select function('group_concat', m.username) from Member m";
+            query = "select group_concat(m.username) from Member m";
+
             List<String> resultList2 = em.createQuery(query, String.class)
                     .getResultList();
 
             for (String s : resultList2) {
                 System.out.println("s = " + s);
             }
-            System.out.println("=====================================================================");
 
-            query = "select nullif(m.username, :username) " +
-                    "from Member m";
-            List<String> resultList3 = em.createQuery(query, String.class)
-                    .setParameter("username", "phj0")
-                    .getResultList();
-
-            for (String s : resultList3) {
-                System.out.println("s = " + s);
-            }
-            System.out.println("=====================================================================");
 
             tx.commit();
         } catch (Exception e) {
