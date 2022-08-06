@@ -15,69 +15,108 @@ public class JpaMain {
 
         System.out.println("=====================================================================");
         try {
-            Team team1 = new Team();
-            team1.setName("mjc");
-            em.persist(team1);
+            Team teamA = new Team();
+            teamA.setName("TEAM_A");
+            em.persist(teamA);
+
+            Team teamB = new Team();
+            teamB.setName("TEAM_B");
+            em.persist(teamB);
 
             Member member1 = new Member();
-            member1.setUsername("phj");
-            member1.setAge(25);
-            member1.changeTeam(team1);
-            member1.setType(MemberType.ADMIN);
+            member1.setUsername("회원1");
+            member1.changeTeam(teamA);
             em.persist(member1);
 
             Member member2 = new Member();
-            member2.setUsername("park");
-            member2.setAge(25);
-            member2.changeTeam(team1);
-            member2.setType(MemberType.ADMIN);
+            member2.setUsername("회원2");
+            member2.changeTeam(teamA);
             em.persist(member2);
+
+            Member member3 = new Member();
+            member3.setUsername("회원3");
+            member3.changeTeam(teamB);
+            em.persist(member3);
 
             em.flush();
             em.clear();
 
-            String query;
-            System.out.println("상태 필드 =====================================================================");
-            query = "select m.username from Member m";
+            System.out.println("=====================================================================");
+            String query = "select m from Member m";
             System.out.println(query);
-            List<String> result1 = em.createQuery(query, String.class)
-                    .getResultList();
-            for (String username : result1) {
-                System.out.println("username = " + username);
+            List<Member> resultList1 = em.createQuery(query, Member.class).getResultList();
+
+            for (Member member : resultList1) {
+                System.out.println("member Name = " + member.getUsername() + " team Name = " + member.getTeam().getName());
             }
 
-            System.out.println("단일 값 연관 필드 =====================================================================");
-            query = "select m.team from Member m";
+            em.flush();
+            em.clear();
+
+            System.out.println("=====================================================================");
+            query = "select m from Member m inner join m.team";
             System.out.println(query);
-            List<Team> result2 = em.createQuery(query, Team.class)
-                    .getResultList();
-            for (Team team : result2) {
-                System.out.println("Team = " + team);
+            List<Member> resultList2 = em.createQuery(query, Member.class).getResultList();
+
+            for (Member member : resultList2) {
+                System.out.println("member Name = " + member.getUsername() + " team Name = " + member.getTeam().getName());
             }
 
-            System.out.println();
-            query = "select t from Member m join m.team t";
+            em.flush();
+            em.clear();
+
+            System.out.println("=====================================================================");
+            query = "select m from Member m join fetch m.team";
             System.out.println(query);
-            List<Team> result3 = em.createQuery(query, Team.class)
-                    .getResultList();
-            for (Team team : result3) {
-                System.out.println("Team = " + team);
+            List<Member> resultList3 = em.createQuery(query, Member.class).getResultList();
+
+            for (Member member : resultList3) {
+                System.out.println("member Name = " + member.getUsername() + " team Name = " + member.getTeam().getName());
             }
 
-            System.out.println();
-            query = "select m from Member m join m.team t";
+            em.flush();
+            em.clear();
+
+            System.out.println("중복 제거 =====================================================================");
+            query = "select distinct t from Team t join fetch t.members";
             System.out.println(query);
-            List<Member> result4 = em.createQuery(query, Member.class).getResultList();
-            for (Member member : result4) {
-                System.out.println("member = " + member);
+            List<Team> resultList4 = em.createQuery(query, Team.class).getResultList();
+
+            System.out.println("select count : " + resultList4.size());
+            for (Team team : resultList4) {
+                System.out.println("team Name = " + team.getName());
+                for (Member member : team.getMembers()) {
+                    System.out.println("member = " + member);
+                }
+                System.out.println();
             }
 
-            System.out.println("컬렉션 값 연관 필드 =====================================================================");
-            query = "select t.members from Team t";
+            em.flush();
+            em.clear();
+
+            System.out.println("페치 조인과 일반 조인의 차이=====================================================================");
+            query = "select m from Member m join m.team";
             System.out.println(query);
-            List<Collection> result5 = em.createQuery(query, Collection.class).getResultList();
-            for (Object o : result5) {
-                System.out.println("o = " + o);
+            List<Member> resultList5 = em.createQuery(query, Member.class).getResultList();
+
+            System.out.println("select count : " + resultList5.size());
+
+            for (Member member : resultList5) {
+                System.out.println("member = " + member + " team = " + member.getTeam());
+            }
+
+            em.flush();
+            em.clear();
+
+            System.out.println("=====================================================================");
+            query = "select m from Member m join fetch m.team";
+            System.out.println(query);
+            List<Member> resultList6 = em.createQuery(query, Member.class).getResultList();
+
+            System.out.println("select count : " + resultList6.size());
+
+            for (Member member : resultList6) {
+                System.out.println("member = " + member + " team = " + member.getTeam());
             }
 
             tx.commit();
