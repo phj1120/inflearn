@@ -19,4 +19,10 @@ public class Member {
 
     @NotEmpty
     private String password;
+
+    public Member(String loginId, String password, String name) {
+        this.loginId = loginId;
+        this.password = password;
+        this.name = name;
+    }
 }
