@@ -6,14 +6,14 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Controller;
 import org.springframework.validation.BindingResult;
-import org.springframework.validation.FieldError;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.ModelAttribute;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 
+import javax.servlet.http.Cookie;
+import javax.servlet.http.HttpServletResponse;
 import javax.validation.Valid;
-import java.util.List;
 
 @Slf4j
 @Controller
@@ -24,12 +24,12 @@ public class LoginController {
     private final LoginService loginService;
 
     @GetMapping("login")
-    public String login(@ModelAttribute("loginForm") LoginForm form) {
+    public String loginForm(@ModelAttribute("loginForm") LoginForm form) {
         return "/login/loginForm";
     }
 
     @PostMapping("/login")
-    public String loginRequest(@Valid @ModelAttribute LoginForm form, BindingResult result) {
+    public String login(@Valid @ModelAttribute LoginForm form, BindingResult result, HttpServletResponse response) {
         if (result.hasErrors()) {
             return "/login/loginForm";
         }
@@ -42,8 +42,22 @@ public class LoginController {
         }
         log.info("login success{}", loginMember);
 
-        // TODO 로그인 성공시 처리
+        Cookie idCookie = new Cookie("memberId",
+                String.valueOf(loginMember.getId()));
+        response.addCookie(idCookie);
 
         return "redirect:/";
+    }
+
+    @PostMapping("/logout")
+    public String logout(HttpServletResponse response) {
+        expiredCookie(response, "memberId");
+        return "redirect:/";
+    }
+
+    private void expiredCookie(HttpServletResponse response, String cookieName) {
+        Cookie cookie = new Cookie(cookieName, null);
+        cookie.setMaxAge(0);
+        response.addCookie(cookie);
     }
 }
