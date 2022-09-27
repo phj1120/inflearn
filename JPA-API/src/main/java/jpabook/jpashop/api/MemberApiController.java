@@ -44,7 +44,7 @@ public class MemberApiController {
     @PatchMapping("/api/members/{id}")
     public UpdateMemberResponse updateMember(@PathVariable("id") Long id,
                                              @RequestBody UpdateMemberRequest request) {
-        memberService.update(id, request.name);
+        memberService.update(id, request.getName());
         Member findMember = memberService.findOne(id);
         return new UpdateMemberResponse(findMember.getId(), findMember.getName());
     }
