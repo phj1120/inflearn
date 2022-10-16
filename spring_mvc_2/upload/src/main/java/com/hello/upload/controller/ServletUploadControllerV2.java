@@ -49,7 +49,7 @@ public class ServletUploadControllerV2 {
             }
 
             // Content-Disposition, fileName 꺼내는 편의 메서드 제공
-            log.info("submittedFilename={}", part.getSubmittedFileName());
+            log.info("submittedFileName={}", part.getSubmittedFileName());
             log.info("size={}", part.getSize());
 
             // 데이터 읽기
