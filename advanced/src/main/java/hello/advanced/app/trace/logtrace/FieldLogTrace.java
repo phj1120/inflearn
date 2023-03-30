@@ -13,6 +13,8 @@ public class FieldLogTrace implements LogTrace {
 
     private TraceId traceIdHolder; // traceId 동기화, 동시성 이슈 발생
 
+
+    // TraceStatus 반환
     @Override
     public TraceStatus begin(String message) {
         syncTraceId();
@@ -48,12 +50,13 @@ public class FieldLogTrace implements LogTrace {
         if (e == null) {
             log.info("[{}] {}{} time={}ms", traceId.getId(), addSpace(COMPLETE_PREFIX, traceId.getLevel()), status.getMessage(), resultTimeMs);
         } else {
-            log.info("[{}] {}{} time={}ms ex={}", traceId.getId(), addSpace(EX_PREFIX, traceId.getLevel()), status.getMessage(), resultTimeMs, e.toString());
+            log.info("[{}] {}{} time={}ms ex={}", traceId.getId(), addSpace(EX_PREFIX, traceId.getLevel()), status.getMessage(), resultTimeMs, e);
         }
 
         releaseTraceId();
     }
 
+    // TraceId 닫기
     private void releaseTraceId() {
         if (traceIdHolder.isFirstLevel()) {
             traceIdHolder = null;
@@ -62,6 +65,7 @@ public class FieldLogTrace implements LogTrace {
         }
     }
 
+    // 공백 추가
     private String addSpace(String prefix, int level) {
         StringBuilder sb = new StringBuilder();
         for (int i = 0; i < level; i++) {
