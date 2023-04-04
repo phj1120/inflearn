@@ -1,6 +1,5 @@
 package hello.jdbc.connection;
 
-import com.zaxxer.hikari.HikariConfig;
 import com.zaxxer.hikari.HikariDataSource;
 import hello.jdbc.domain.Member;
 import lombok.extern.slf4j.Slf4j;
@@ -134,7 +133,7 @@ public class ConnectionTest {
     }
 
     @Test
-    void hikariReturnConnectionRepeat() throws SQLException, InterruptedException {
+    void hikariConnectionClose() throws SQLException, InterruptedException {
         HikariDataSource dataSource = new HikariDataSource();
         dataSource.setJdbcUrl(URL);
         dataSource.setUsername(USERNAME);
@@ -144,12 +143,88 @@ public class ConnectionTest {
 
         Thread.sleep(1000);
 
-        hikariReturnConnection(dataSource);
-        hikariReturnConnection(dataSource);
-        hikariReturnConnection(dataSource);
-        hikariReturnConnection(dataSource);
+        Connection con1 = dataSource.getConnection();
+        bizLogic(con1);
+
+        Connection con2 = dataSource.getConnection();
+        bizLogic(con2);
+
+        Connection con3 = dataSource.getConnection();
+        bizLogic(con3);
 
         Thread.sleep(1000);
+
+//        Con1: HikariProxyConnection@1824837049 wrapping conn0
+//        Con2: HikariProxyConnection@1204296383 wrapping conn0
+//        Con3: HikariProxyConnection@2003463579 wrapping conn0
+    }
+
+    @Test
+    void hikariConnectionNoClose() throws SQLException, InterruptedException {
+        HikariDataSource dataSource = new HikariDataSource();
+        dataSource.setJdbcUrl(URL);
+        dataSource.setUsername(USERNAME);
+        dataSource.setPassword(PASSWORD);
+        dataSource.setMaximumPoolSize(10);
+        dataSource.setConnectionTimeout(5000L);
+
+        Thread.sleep(1000);
+
+        Connection con1 = dataSource.getConnection();
+        bizLogic(con1);
+
+        Connection con2 = dataSource.getConnection();
+        bizLogic(con2);
+
+        Connection con3 = dataSource.getConnection();
+        bizLogic(con3);
+
+        Thread.sleep(1000);
+
+//        Con1: HikariProxyConnection@1824837049 wrapping conn0
+//        Con2: HikariProxyConnection@2133655103 wrapping conn1
+//        Con3: HikariProxyConnection@442199874 wrapping conn2
+    }
+
+    @Test
+    void hikariConnectionOne() throws InterruptedException {
+        DataSource dataSource = getDataSource();
+
+        Connection con = null;
+        try {
+            con = dataSource.getConnection();
+            con.setAutoCommit(false);
+
+            bizLogic(con);
+            bizLogic(con);
+            bizLogic(con);
+
+            con.commit();
+        } catch (SQLException e) {
+            e.printStackTrace();
+        } finally {
+            JdbcUtils.closeConnection(con);
+        }
+        Thread.sleep(1000);
+    }
+
+    DataSource getDataSource() {
+        HikariDataSource dataSource = new HikariDataSource();
+        dataSource.setJdbcUrl(URL);
+        dataSource.setUsername(USERNAME);
+        dataSource.setPassword(PASSWORD);
+        dataSource.setMaximumPoolSize(10);
+        dataSource.setConnectionTimeout(5000L);
+
+        return dataSource;
+    }
+
+    void bizLogic(Connection con) throws SQLException {
+        log.info("connection: {}", con);
+        String sql = "select * from member";
+        PreparedStatement pstmt = con.prepareStatement(sql);
+        pstmt.executeQuery();
+        JdbcUtils.closeStatement(pstmt);
     }
 
     @Test

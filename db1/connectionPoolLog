@@ -1,0 +1,22 @@
+16:31:22.285 [main] INFO com.zaxxer.hikari.HikariDataSource - HikariPool-1 - Starting...
+16:31:22.305 [main] DEBUG com.zaxxer.hikari.util.DriverDataSource - Loaded driver with class name org.h2.Driver for jdbcUrl=jdbc:h2:tcp://localhost/~/test
+16:31:22.428 [main] DEBUG com.zaxxer.hikari.pool.HikariPool - HikariPool-1 - Added connection conn0: url=jdbc:h2:tcp://localhost/~/test user=SA
+16:31:22.431 [main] INFO com.zaxxer.hikari.HikariDataSource - HikariPool-1 - Start completed.
+
+16:31:22.433 [main] INFO hello.jdbc.repository.MemberRepositoryV2 - get connection=HikariProxyConnection@788625466 wrapping conn0: url=jdbc:h2:tcp://localhost/~/test user=SA, class=class com.zaxxer.hikari.pool.HikariProxyConnection
+16:31:22.460 [main] INFO hello.jdbc.repository.MemberRepositoryV2 - get connection=HikariProxyConnection@1298146757 wrapping conn0: url=jdbc:h2:tcp://localhost/~/test user=SA, class=class com.zaxxer.hikari.pool.HikariProxyConnection
+16:31:22.461 [main] INFO hello.jdbc.service.MemberServiceV2Test - Tx Start
+16:31:22.534 [HikariPool-1 housekeeper] DEBUG com.zaxxer.hikari.pool.HikariPool - HikariPool-1 - Pool stats (total=1, active=0, idle=1, waiting=0)
+16:31:22.541 [HikariPool-1 connection adder] DEBUG com.zaxxer.hikari.pool.HikariPool - HikariPool-1 - Added connection conn1: url=jdbc:h2:tcp://localhost/~/test user=SA
+16:31:22.543 [main] INFO hello.jdbc.service.MemberServiceV2Test - Tx End
+16:31:22.543 [main] INFO hello.jdbc.repository.MemberRepositoryV2 - get connection=HikariProxyConnection@2095788421 wrapping conn0: url=jdbc:h2:tcp://localhost/~/test user=SA, class=class com.zaxxer.hikari.pool.HikariProxyConnection
+16:31:22.543 [main] INFO hello.jdbc.repository.MemberRepositoryV2 - get connection=HikariProxyConnection@1131184547 wrapping conn0: url=jdbc:h2:tcp://localhost/~/test user=SA, class=class com.zaxxer.hikari.pool.HikariProxyConnection
+16:31:22.544 [HikariPool-1 connection adder] DEBUG com.zaxxer.hikari.pool.HikariPool - HikariPool-1 - Added connection conn2: url=jdbc:h2:tcp://localhost/~/test user=SA
+16:31:22.548 [HikariPool-1 connection adder] DEBUG com.zaxxer.hikari.pool.HikariPool - HikariPool-1 - Added connection conn3: url=jdbc:h2:tcp://localhost/~/test user=SA
+16:31:22.549 [main] INFO hello.jdbc.repository.MemberRepositoryV2 - get connection=HikariProxyConnection@1508181426 wrapping conn0: url=jdbc:h2:tcp://localhost/~/test user=SA, class=class com.zaxxer.hikari.pool.HikariProxyConnection
+16:31:22.549 [main] INFO hello.jdbc.repository.MemberRepositoryV2 - get connection=HikariProxyConnection@988850650 wrapping conn0: url=jdbc:h2:tcp://localhost/~/test user=SA, class=class com.zaxxer.hikari.pool.HikariProxyConnection
+16:31:22.550 [main] INFO hello.jdbc.repository.MemberRepositoryV2 - get connection=HikariProxyConnection@71016405 wrapping conn0: url=jdbc:h2:tcp://localhost/~/test user=SA, class=class com.zaxxer.hikari.pool.HikariProxyConnection
+16:31:22.551 [HikariPool-1 connection adder] DEBUG com.zaxxer.hikari.pool.HikariPool - HikariPool-1 - Added connection conn4: url=jdbc:h2:tcp://localhost/~/test user=SA
+16:31:22.552 [HikariPool-1 connection adder] DEBUG com.zaxxer.hikari.pool.HikariPool - HikariPool-1 - After adding stats (total=5, active=0, idle=5, waiting=0)
+
+Process finished with exit code 0
