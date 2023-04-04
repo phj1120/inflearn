@@ -1,21 +1,33 @@
 package hello.jdbc.connection;
 
 import com.zaxxer.hikari.HikariDataSource;
-import hello.jdbc.domain.Member;
 import lombok.extern.slf4j.Slf4j;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.jdbc.datasource.DriverManagerDataSource;
 import org.springframework.jdbc.support.JdbcUtils;
 
 import javax.sql.DataSource;
-import java.sql.*;
-import java.util.ArrayList;
-import java.util.List;
+import java.sql.Connection;
+import java.sql.DriverManager;
+import java.sql.PreparedStatement;
+import java.sql.SQLException;
 
 import static hello.jdbc.connection.ConnectionConst.*;
 
 @Slf4j
 public class ConnectionTest {
+
+    private DataSource dataSource;
+
+    @BeforeEach
+    public void before() {
+        // DriverManagerDataSource
+//        dataSource = getDriverManagerDataSource();
+
+        // HikariDataSource
+        dataSource = getHikariDataSource();
+    }
 
     @Test
     void driverManager() throws SQLException {
@@ -87,7 +99,9 @@ public class ConnectionTest {
         Connection con7 = dataSource.getConnection();
         Connection con8 = dataSource.getConnection();
         Connection con9 = dataSource.getConnection();
+//        Connection con10 = dataSource.getConnection(); // 예외 발생
 
+        // Connection 종료 후
         JdbcUtils.closeConnection(con0);
         JdbcUtils.closeConnection(con1);
         JdbcUtils.closeConnection(con2);
@@ -99,75 +113,68 @@ public class ConnectionTest {
         JdbcUtils.closeConnection(con8);
         JdbcUtils.closeConnection(con9);
 
+        // Connection 가져오기
         Connection con10 = dataSource.getConnection();
         Connection con11 = dataSource.getConnection();
         Connection con12 = dataSource.getConnection();
         Connection con13 = dataSource.getConnection();
         Connection con14 = dataSource.getConnection();
-        Connection con15 = dataSource.getConnection();
-        Connection con16 = dataSource.getConnection();
-        Connection con17 = dataSource.getConnection();
-        Connection con18 = dataSource.getConnection();
-        Connection con19 = dataSource.getConnection();
     }
 
-    void hikariReturnConnection(DataSource dataSource) throws SQLException {
-        Connection con = dataSource.getConnection();
-        log.info("Connection: {} class: {}", con, con.getClass());
-        String Sql = "select * from member";
-        PreparedStatement pstmt = con.prepareStatement(Sql);
-        ResultSet rs = pstmt.executeQuery();
-
-
-        List<Member> memberList = new ArrayList<>();
-        while (rs.next()) {
-            String memberId = rs.getString("member_id");
-            int money = rs.getInt("money");
-            memberList.add(new Member(memberId, money));
-        }
-        log.info(memberList.toString());
-
-        JdbcUtils.closeResultSet(rs);
-        JdbcUtils.closeStatement(pstmt);
-        JdbcUtils.closeConnection(con);
-    }
-
+    /**
+     * 각 커넥션 마다 close 할 경우
+     * connection: HikariProxyConnection@157168588 wrapping conn0: url=jdbc:h2:tcp://localhost/~/test user=SA
+     * connection: HikariProxyConnection@319689067 wrapping conn0: url=jdbc:h2:tcp://localhost/~/test user=SA
+     * connection: HikariProxyConnection@238564722 wrapping conn0: url=jdbc:h2:tcp://localhost/~/test user=SA
+     */
     @Test
-    void hikariConnectionClose() throws SQLException, InterruptedException {
-        HikariDataSource dataSource = new HikariDataSource();
-        dataSource.setJdbcUrl(URL);
-        dataSource.setUsername(USERNAME);
-        dataSource.setPassword(PASSWORD);
-        dataSource.setMaximumPoolSize(10);
-        dataSource.setConnectionTimeout(5000L);
+    void hikariConnectionClose() throws InterruptedException {
+        DataSource dataSource = getHikariDataSource();
 
         Thread.sleep(1000);
 
-        Connection con1 = dataSource.getConnection();
-        bizLogic(con1);
+        Connection con1 = null;
+        try {
+            con1 = dataSource.getConnection();
+            bizLogic(con1);
+        } catch (SQLException e) {
+            e.printStackTrace();
+        } finally {
+            JdbcUtils.closeConnection(con1);
+        }
 
-        Connection con2 = dataSource.getConnection();
-        bizLogic(con2);
+        Connection con2 = null;
+        try {
+            con2 = dataSource.getConnection();
+            bizLogic(con2);
+        } catch (SQLException e) {
+            e.printStackTrace();
+        } finally {
+            JdbcUtils.closeConnection(con2);
+        }
 
-        Connection con3 = dataSource.getConnection();
-        bizLogic(con3);
+        Connection con3 = null;
+        try {
+            con3 = dataSource.getConnection();
+            bizLogic(con3);
+        } catch (SQLException e) {
+            e.printStackTrace();
+        } finally {
+            JdbcUtils.closeConnection(con3);
+        }
 
         Thread.sleep(1000);
-
-//        Con1: HikariProxyConnection@1824837049 wrapping conn0
-//        Con2: HikariProxyConnection@1204296383 wrapping conn0
-//        Con3: HikariProxyConnection@2003463579 wrapping conn0
     }
 
+    /**
+     * 각 커넥션을 close 하지 않을 경우
+     * connection: HikariProxyConnection@100929741 wrapping conn0: url=jdbc:h2:tcp://localhost/~/test user=SA
+     * connection: HikariProxyConnection@20111564 wrapping conn1: url=jdbc:h2:tcp://localhost/~/test user=SA
+     * connection: HikariProxyConnection@2065718717 wrapping conn2: url=jdbc:h2:tcp://localhost/~/test user=SA
+     */
     @Test
     void hikariConnectionNoClose() throws SQLException, InterruptedException {
-        HikariDataSource dataSource = new HikariDataSource();
-        dataSource.setJdbcUrl(URL);
-        dataSource.setUsername(USERNAME);
-        dataSource.setPassword(PASSWORD);
-        dataSource.setMaximumPoolSize(10);
-        dataSource.setConnectionTimeout(5000L);
-
+        DataSource dataSource = getHikariDataSource();
         Thread.sleep(1000);
 
         Connection con1 = dataSource.getConnection();
@@ -180,15 +187,18 @@ public class ConnectionTest {
         bizLogic(con3);
 
         Thread.sleep(1000);
-
-//        Con1: HikariProxyConnection@1824837049 wrapping conn0
-//        Con2: HikariProxyConnection@2133655103 wrapping conn1
-//        Con3: HikariProxyConnection@442199874 wrapping conn2
     }
 
+
+    /**
+     * 한 커넥션으로 여러 쿼리 수행(Transaction 을 위해)
+     * connection: HikariProxyConnection@1154821602 wrapping conn0: url=jdbc:h2:tcp://localhost/~/test user=SA
+     * connection: HikariProxyConnection@1154821602 wrapping conn0: url=jdbc:h2:tcp://localhost/~/test user=SA
+     * connection: HikariProxyConnection@1154821602 wrapping conn0: url=jdbc:h2:tcp://localhost/~/test user=SA
+     */
     @Test
     void hikariConnectionOne() throws InterruptedException {
-        DataSource dataSource = getDataSource();
+        DataSource dataSource = getHikariDataSource();
 
         Connection con = null;
         try {
@@ -208,7 +218,7 @@ public class ConnectionTest {
         Thread.sleep(1000);
     }
 
-    DataSource getDataSource() {
+    DataSource getHikariDataSource() {
         HikariDataSource dataSource = new HikariDataSource();
         dataSource.setJdbcUrl(URL);
         dataSource.setUsername(USERNAME);
@@ -219,23 +229,17 @@ public class ConnectionTest {
         return dataSource;
     }
 
+    DataSource getDriverManagerDataSource() {
+        DriverManagerDataSource dataSource = new DriverManagerDataSource(URL, USERNAME, PASSWORD);
+
+        return dataSource;
+    }
+
     void bizLogic(Connection con) throws SQLException {
         log.info("connection: {}", con);
         String sql = "select * from member";
         PreparedStatement pstmt = con.prepareStatement(sql);
         pstmt.executeQuery();
         JdbcUtils.closeStatement(pstmt);
-    }
-
-    @Test
-    void dataSourceReturnConnectionRepeat() throws SQLException, InterruptedException {
-        DataSource dataSource = new DriverManagerDataSource(URL, USERNAME, PASSWORD);
-
-        hikariReturnConnection(dataSource);
-        hikariReturnConnection(dataSource);
-        hikariReturnConnection(dataSource);
-        hikariReturnConnection(dataSource);
-
-        Thread.sleep(1000);
     }
 }
