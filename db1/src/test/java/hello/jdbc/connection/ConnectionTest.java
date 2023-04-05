@@ -1,17 +1,19 @@
 package hello.jdbc.connection;
 
+import com.zaxxer.hikari.HikariConfig;
 import com.zaxxer.hikari.HikariDataSource;
 import lombok.extern.slf4j.Slf4j;
+import org.assertj.core.api.Assertions;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
+import org.springframework.jdbc.datasource.DataSourceUtils;
 import org.springframework.jdbc.datasource.DriverManagerDataSource;
 import org.springframework.jdbc.support.JdbcUtils;
 
 import javax.sql.DataSource;
-import java.sql.Connection;
-import java.sql.DriverManager;
-import java.sql.PreparedStatement;
-import java.sql.SQLException;
+import java.sql.*;
 
 import static hello.jdbc.connection.ConnectionConst.*;
 
@@ -22,15 +24,23 @@ public class ConnectionTest {
 
     @BeforeEach
     public void before() {
-        // DriverManagerDataSource
-//        dataSource = getDriverManagerDataSource();
+        // DriverManager
+//        dataSource = new DriverManagerDataSource(URL, USERNAME, PASSWORD);
 
-        // HikariDataSource
-        dataSource = getHikariDataSource();
+        // HikariCP
+        HikariConfig hikariConfig = new HikariConfig();
+        hikariConfig.setJdbcUrl(URL);
+        hikariConfig.setUsername(USERNAME);
+        hikariConfig.setPassword(PASSWORD);
+        dataSource = new HikariDataSource(hikariConfig);
     }
 
+    /**
+     * DriverManager: 설정, 사용을 한 번에
+     */
+    @DisplayName("DriverManager 사용")
     @Test
-    void driverManager() throws SQLException {
+    void useDriverManager() throws SQLException {
         Connection con1 = DriverManager.getConnection(URL, USERNAME, PASSWORD);
         Connection con2 = DriverManager.getConnection(URL, USERNAME, PASSWORD);
 
@@ -38,15 +48,14 @@ public class ConnectionTest {
         log.info("connection={}, class={}", con2, con2.getClass());
     }
 
-
-    // DataSource: 커넥션을 획득하는 방법을 추상화
-    // 설정과 사용을 분리 함
+    /**
+     * DataSource: 커넥션을 획득하는 방법을 추상화, 설정과 사용을 분리
+     */
+    @DisplayName("DriverManagerDataSource 사용")
     @Test
-    void driverManagerDataSource() throws SQLException {
-        // 설정
+    void useDriverManagerDataSource() throws SQLException {
         DataSource dataSource = new DriverManagerDataSource(URL, USERNAME, PASSWORD);
 
-        // 사용
         Connection con0 = dataSource.getConnection();
         Connection con1 = dataSource.getConnection();
 
@@ -54,39 +63,14 @@ public class ConnectionTest {
         log.info("connection={}, class={}", con1, con1.getClass());
     }
 
-    @Test
-    void dataSourceConnectionPool() throws SQLException, InterruptedException {
-        // 커넥션 풀링
-        HikariDataSource dataSource = new HikariDataSource();
-        dataSource.setJdbcUrl(URL);
-        dataSource.setUsername(USERNAME);
-        dataSource.setPassword(PASSWORD);
-        dataSource.setMaximumPoolSize(10);
-        dataSource.setPoolName("MyPool");
-
-        useDataSource(dataSource);
-        // pool 에 connection 추가하는 건 리소스를 많이 잡아 먹기 때문에 다른 Thread 에서 돔
-        // connection adder Thread 가 실행 완료 되기전에
-        // main Thread 가 끝나 로그가 찍히지 않을 수 있기 때문에
-        // 1초 대기
-        Thread.sleep(1000);
-    }
-
-    private void useDataSource(DataSource dataSource) throws SQLException {
-        Connection con0 = dataSource.getConnection();
-        Connection con1 = dataSource.getConnection();
-
-        log.info("connection={}, class={}", con0, con0.getClass());
-        log.info("connection={}, class={}", con1, con1.getClass());
-    }
-
+    @DisplayName("커넥션풀 크기를 초과할 경우")
     @Test
     public void overPoolSize() throws SQLException {
         HikariDataSource dataSource = new HikariDataSource();
         dataSource.setJdbcUrl(URL);
         dataSource.setUsername(USERNAME);
         dataSource.setPassword(PASSWORD);
-        dataSource.setMaximumPoolSize(10);
+        dataSource.setMaximumPoolSize(5);
         dataSource.setConnectionTimeout(5000L);
 
         Connection con0 = dataSource.getConnection();
@@ -94,120 +78,78 @@ public class ConnectionTest {
         Connection con2 = dataSource.getConnection();
         Connection con3 = dataSource.getConnection();
         Connection con4 = dataSource.getConnection();
-        Connection con5 = dataSource.getConnection();
-        Connection con6 = dataSource.getConnection();
-        Connection con7 = dataSource.getConnection();
-        Connection con8 = dataSource.getConnection();
-        Connection con9 = dataSource.getConnection();
-//        Connection con10 = dataSource.getConnection(); // 예외 발생
 
-        // Connection 종료 후
-        JdbcUtils.closeConnection(con0);
-        JdbcUtils.closeConnection(con1);
-        JdbcUtils.closeConnection(con2);
-        JdbcUtils.closeConnection(con3);
+        // MaximumPoolSize 보다 많이 생성하면 SQLTransientConnectionException 발생
+        Assertions.assertThatThrownBy(() -> {
+            Connection con5 = dataSource.getConnection();
+        }).isInstanceOf(SQLTransientConnectionException.class);
+
+        // 기존의 Connection 종료 후 추가로 생성 가능
         JdbcUtils.closeConnection(con4);
-        JdbcUtils.closeConnection(con5);
-        JdbcUtils.closeConnection(con6);
-        JdbcUtils.closeConnection(con7);
-        JdbcUtils.closeConnection(con8);
-        JdbcUtils.closeConnection(con9);
-
-        // Connection 가져오기
-        Connection con10 = dataSource.getConnection();
-        Connection con11 = dataSource.getConnection();
-        Connection con12 = dataSource.getConnection();
-        Connection con13 = dataSource.getConnection();
-        Connection con14 = dataSource.getConnection();
+        Connection con5 = dataSource.getConnection();
     }
 
     /**
-     * 각 커넥션 마다 close 할 경우
      * connection: HikariProxyConnection@157168588 wrapping conn0: url=jdbc:h2:tcp://localhost/~/test user=SA
      * connection: HikariProxyConnection@319689067 wrapping conn0: url=jdbc:h2:tcp://localhost/~/test user=SA
      * connection: HikariProxyConnection@238564722 wrapping conn0: url=jdbc:h2:tcp://localhost/~/test user=SA
      */
+    @DisplayName("커넥션 사용 후 종료")
     @Test
-    void hikariConnectionClose() throws InterruptedException {
-        DataSource dataSource = getHikariDataSource();
-
+    void CloseConnectionAfterUse() throws InterruptedException {
         Thread.sleep(1000);
 
-        Connection con1 = null;
-        try {
-            con1 = dataSource.getConnection();
-            bizLogic(con1);
-        } catch (SQLException e) {
-            e.printStackTrace();
-        } finally {
-            JdbcUtils.closeConnection(con1);
-        }
-
-        Connection con2 = null;
-        try {
-            con2 = dataSource.getConnection();
-            bizLogic(con2);
-        } catch (SQLException e) {
-            e.printStackTrace();
-        } finally {
-            JdbcUtils.closeConnection(con2);
-        }
-
-        Connection con3 = null;
-        try {
-            con3 = dataSource.getConnection();
-            bizLogic(con3);
-        } catch (SQLException e) {
-            e.printStackTrace();
-        } finally {
-            JdbcUtils.closeConnection(con3);
+        for (int i = 0; i < 3; i++) {
+            Connection con = null;
+            try {
+                con = dataSource.getConnection();
+                bizLogic(con);
+            } catch (SQLException e) {
+                e.printStackTrace();
+            } finally {
+                JdbcUtils.closeConnection(con);
+            }
         }
 
         Thread.sleep(1000);
     }
 
     /**
-     * 각 커넥션을 close 하지 않을 경우
      * connection: HikariProxyConnection@100929741 wrapping conn0: url=jdbc:h2:tcp://localhost/~/test user=SA
      * connection: HikariProxyConnection@20111564 wrapping conn1: url=jdbc:h2:tcp://localhost/~/test user=SA
      * connection: HikariProxyConnection@2065718717 wrapping conn2: url=jdbc:h2:tcp://localhost/~/test user=SA
      */
+    @DisplayName("커넥션 사용 후 종료 하지 않을 경우")
     @Test
-    void hikariConnectionNoClose() throws SQLException, InterruptedException {
-        DataSource dataSource = getHikariDataSource();
-        Thread.sleep(1000);
-
-        Connection con1 = dataSource.getConnection();
-        bizLogic(con1);
-
-        Connection con2 = dataSource.getConnection();
-        bizLogic(con2);
-
-        Connection con3 = dataSource.getConnection();
-        bizLogic(con3);
-
+    void NotCloseConnectionAfterUse() throws InterruptedException {
+        for (int i = 0; i < 3; i++) {
+            try {
+                Connection con = dataSource.getConnection();
+                bizLogic(con);
+            } catch (SQLException e) {
+                e.printStackTrace();
+            }
+        }
         Thread.sleep(1000);
     }
 
 
     /**
-     * 한 커넥션으로 여러 쿼리 수행(Transaction 을 위해)
      * connection: HikariProxyConnection@1154821602 wrapping conn0: url=jdbc:h2:tcp://localhost/~/test user=SA
      * connection: HikariProxyConnection@1154821602 wrapping conn0: url=jdbc:h2:tcp://localhost/~/test user=SA
      * connection: HikariProxyConnection@1154821602 wrapping conn0: url=jdbc:h2:tcp://localhost/~/test user=SA
      */
+    @DisplayName("하나의 커넥션 사용 (Transaction 을 위해)")
     @Test
-    void hikariConnectionOne() throws InterruptedException {
-        DataSource dataSource = getHikariDataSource();
-
+    void useOneConnection() throws InterruptedException {
         Connection con = null;
         try {
             con = dataSource.getConnection();
             con.setAutoCommit(false);
 
-            bizLogic(con);
-            bizLogic(con);
-            bizLogic(con);
+            for (int i = 0; i < 3; i++) {
+                bizLogic(con);
+            }
 
             con.commit();
         } catch (SQLException e) {
@@ -218,24 +160,7 @@ public class ConnectionTest {
         Thread.sleep(1000);
     }
 
-    DataSource getHikariDataSource() {
-        HikariDataSource dataSource = new HikariDataSource();
-        dataSource.setJdbcUrl(URL);
-        dataSource.setUsername(USERNAME);
-        dataSource.setPassword(PASSWORD);
-        dataSource.setMaximumPoolSize(10);
-        dataSource.setConnectionTimeout(5000L);
-
-        return dataSource;
-    }
-
-    DataSource getDriverManagerDataSource() {
-        DriverManagerDataSource dataSource = new DriverManagerDataSource(URL, USERNAME, PASSWORD);
-
-        return dataSource;
-    }
-
-    void bizLogic(Connection con) throws SQLException {
+    private void bizLogic(Connection con) throws SQLException {
         log.info("connection: {}", con);
         String sql = "select * from member";
         PreparedStatement pstmt = con.prepareStatement(sql);
