@@ -3,14 +3,25 @@ package hello.jdbc.service;
 import com.zaxxer.hikari.HikariDataSource;
 import hello.jdbc.domain.Member;
 import hello.jdbc.repository.MemberRepositoryV3;
+import lombok.Data;
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
+import org.springframework.aop.support.AopUtils;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.boot.test.context.TestComponent;
+import org.springframework.boot.test.context.TestConfiguration;
+import org.springframework.context.annotation.Bean;
 import org.springframework.jdbc.datasource.DataSourceTransactionManager;
+import org.springframework.jdbc.datasource.DataSourceUtils;
+import org.springframework.jdbc.datasource.DriverManagerDataSource;
 import org.springframework.transaction.PlatformTransactionManager;
 
+import javax.sql.DataSource;
 import java.sql.SQLException;
 
 import static hello.jdbc.connection.ConnectionConst.*;
@@ -21,26 +32,38 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
  * 트랜잭션 - 파라미터, 커넥션 풀 동기화
  */
 @Slf4j
-class MemberServiceV3_1Test {
+@SpringBootTest
+class MemberServiceV3_3Test {
     public static final String MEMBER_A = "memberA";
     public static final String MEMBER_B = "memberB";
     public static final String MEMBER_EX = "ex";
 
+    @Autowired
     private MemberRepositoryV3 memberRepository;
-    private MemberServiceV3_1 memberService;
+    @Autowired
+    private MemberServiceV3_3 memberService;
 
-    @BeforeEach
-    void before() {
-        HikariDataSource dataSource = new HikariDataSource();
-        dataSource.setJdbcUrl(URL);
-        dataSource.setUsername(USERNAME);
-        dataSource.setPassword(PASSWORD);
-        dataSource.setMaximumPoolSize(5);
+    @TestConfiguration
+    static class TestConfig {
+        @Bean
+        DataSource dataSource() {
+            return new DriverManagerDataSource(URL, USERNAME, PASSWORD);
+        }
 
-        memberRepository = new MemberRepositoryV3(dataSource);
+        @Bean
+        PlatformTransactionManager transactionManager() {
+            return new DataSourceTransactionManager(dataSource());
+        }
 
-        PlatformTransactionManager transactionManager = new DataSourceTransactionManager(dataSource); // Jpa 로 변경시 JpaTransactionManager 사용하면 됨
-        memberService = new MemberServiceV3_1(transactionManager, memberRepository);
+        @Bean
+        MemberRepositoryV3 memberRepositoryV3() {
+            return new MemberRepositoryV3(dataSource());
+        }
+
+        @Bean
+        MemberServiceV3_3 memberServiceV3_3() {
+            return new MemberServiceV3_3(memberRepositoryV3());
+        }
     }
 
     @AfterEach
@@ -49,6 +72,21 @@ class MemberServiceV3_1Test {
         memberRepository.deleteById(MEMBER_B);
         memberRepository.deleteById(MEMBER_EX);
     }
+
+
+    /**
+     * memberService class=class hello.jdbc.service.MemberServiceV3_3$$EnhancerBySpringCGLIB$$5e3ea0da // 실제 memberService 가 아니라 proxy 임
+     * memberRepository class=class hello.jdbc.repository.MemberRepositoryV3
+     */
+    @Test
+    void AopCheck() {
+        log.info("memberService class={}", memberService.getClass());
+        log.info("memberRepository class={}", memberRepository.getClass());
+
+        assertThat(AopUtils.isAopProxy(memberRepository)).isFalse();
+        assertThat(AopUtils.isAopProxy(memberService)).isTrue();
+    }
+
 
     @Test
     @DisplayName("정상 이체")
