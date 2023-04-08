@@ -1,41 +1,48 @@
 package hello.jdbc.transaction;
 
-import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.sql.SQLException;
-import java.util.NoSuchElementException;
-
 @Slf4j
-@Service
-@RequiredArgsConstructor
 public class TxOuterService {
     private final TxRepository txRepository;
     private final TxInnerService txInnerService;
 
+    public TxOuterService(TxRepository txRepository, TxInnerService txInnerService) {
+        this.txRepository = txRepository;
+        this.txInnerService = txInnerService;
+    }
+
+    public void dependsOnParentTransactions_parentNxChildTx() {
+        log.info("[requiredOuter.start]");
+        txRepository.txException(false);
+
+        txInnerService.inner_Required(false);
+
+        txRepository.txException(false);
+        log.info("[requiredOuter.end]");
+    }
+
     @Transactional(propagation = Propagation.REQUIRED)
-    public void requiredOuter(boolean isOuterExcept, boolean isInnerExcept) throws SQLException {
-        try {
-            log.info("[requiredOuter.start]");
-//            txRepository.txException(isOuterExcept);
-            txInnerService.requiredInner(isInnerExcept);
-            txRepository.txException(isOuterExcept);
-            log.info("[requiredOuter.end]");
-        } catch (NoSuchElementException e) {
-            log.error("----------------{}------------------", e.toString());
-            throw new NoSuchElementException();
-        }
+    public void dependsOnParentTransactions_parentTxChildTx() {
+        log.info("[requiredOuter.start]");
+        txRepository.txException(false);
+
+        txInnerService.inner_Required(false);
+
+        txRepository.txException(false);
+        log.info("[requiredOuter.end]");
     }
 
-    // 이미 Transaction 이 걸린 상태에서 내부에서 호출 할 경우 @Transactional 설정 안 먹음
-    @Transactional(propagation = Propagation.REQUIRES_NEW)
-    public void requiredInner(boolean isInnerExcept) throws SQLException {
-        log.info("[  requiredInner.start]");
-        txRepository.txException(isInnerExcept);
-        log.info("[  requiredInner.end]");
-    }
+    @Transactional(propagation = Propagation.REQUIRED)
+    public void inDependsOnParentTransactions_parentTxChildTx() {
+        log.info("[requiredOuter.start]");
+        txRepository.txException(false);
 
+        txInnerService.inner_RequiresNew(false);
+
+        txRepository.txException(false);
+        log.info("[requiredOuter.end]");
+    }
 }

@@ -1,23 +1,30 @@
 package hello.jdbc.transaction;
 
-import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.stereotype.Service;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.sql.SQLException;
-
 @Slf4j
-@Service
-@RequiredArgsConstructor
 public class TxInnerService {
     private final TxRepository txRepository;
 
+    public TxInnerService(TxRepository txRepository) {
+        this.txRepository = txRepository;
+    }
+
     @Transactional(propagation = Propagation.REQUIRES_NEW)
-    public void requiredInner(boolean isInnerExcept) throws SQLException {
+    public void inner_RequiresNew(boolean isInnerExcept) {
         log.info("[  requiredInner.start]");
         txRepository.txException(isInnerExcept);
         log.info("[  requiredInner.end]");
     }
+
+    @Transactional(propagation = Propagation.REQUIRED)
+    public void inner_Required(boolean isInnerExcept) {
+        log.info("[  requiredInner.start]");
+        txRepository.txException(isInnerExcept);
+        log.info("[  requiredInner.end]");
+    }
+
 }
