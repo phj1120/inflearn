@@ -4,6 +4,8 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.NoSuchElementException;
+
 @Slf4j
 public class TxOuterService {
     private final TxRepository txRepository;
@@ -14,7 +16,7 @@ public class TxOuterService {
         this.txInnerService = txInnerService;
     }
 
-    public void dependsOnParentTransactions_parentNxChildTx() {
+    public void dependsOnParentTransactions_OuterNxInnerTx() {
         log.info("[requiredOuter.start]");
         txRepository.txException(false);
 
@@ -25,7 +27,7 @@ public class TxOuterService {
     }
 
     @Transactional(propagation = Propagation.REQUIRED)
-    public void dependsOnParentTransactions_parentTxChildTx() {
+    public void dependsOnParentTransactions_OuterTxInnerTx() {
         log.info("[requiredOuter.start]");
         txRepository.txException(false);
 
@@ -36,13 +38,17 @@ public class TxOuterService {
     }
 
     @Transactional(propagation = Propagation.REQUIRED)
-    public void inDependsOnParentTransactions_parentTxChildTx() {
+    public void inDependsOnParentTransactions_OuterTxInnerTx(boolean isOuterExceptBeforeInner, boolean isInnerExcept, boolean isOuterExceptAfterInner) {
         log.info("[requiredOuter.start]");
-        txRepository.txException(false);
+        txRepository.txException(isOuterExceptBeforeInner);
 
-        txInnerService.inner_RequiresNew(false);
+        try {
+            txInnerService.inner_RequiresNew(isInnerExcept);
+        } catch (NoSuchElementException e) {
+            log.info("inner 예외 처리 로직");
+        }
 
-        txRepository.txException(false);
+        txRepository.txException(isOuterExceptAfterInner);
         log.info("[requiredOuter.end]");
     }
 }
