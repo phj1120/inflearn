@@ -2,12 +2,10 @@ package hello.jdbc.transaction;
 
 import hello.jdbc.domain.Member;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.jdbc.datasource.DataSourceUtils;
 import org.springframework.jdbc.support.JdbcUtils;
 import org.springframework.jdbc.support.SQLErrorCodeSQLExceptionTranslator;
 import org.springframework.jdbc.support.SQLExceptionTranslator;
-import org.springframework.stereotype.Repository;
 
 import javax.sql.DataSource;
 import java.sql.Connection;
@@ -116,7 +114,10 @@ public class TxRepository {
             stmt = con.prepareStatement(sql);
             stmt.setInt(1, money);
             stmt.setString(2, memberId);
-            throw new NoSuchElementException("Member is not exist");
+            int i = stmt.executeUpdate();
+            if (i == 0) {
+                throw new NoSuchElementException("No Exist Member");
+            }
         } catch (SQLException e) {
             throw exTranslator.translate("read", sql, e);
         } finally {

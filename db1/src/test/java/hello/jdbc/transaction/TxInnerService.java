@@ -15,16 +15,22 @@ public class TxInnerService {
 
     @Transactional(propagation = Propagation.REQUIRES_NEW)
     public void inner_RequiresNew(boolean isInnerExcept) {
-        log.info("[  requiredInner.start]");
+        log.info("[  inner_RequiresNew.start]");
         txRepository.txException(isInnerExcept);
-        log.info("[  requiredInner.end]");
+        log.info("[  inner_RequiresNew.end]");
     }
 
     @Transactional(propagation = Propagation.REQUIRED)
     public void inner_Required(boolean isInnerExcept) {
-        log.info("[  requiredInner.start]");
+        log.info("[  inner_Required.start]");
         txRepository.txException(isInnerExcept);
-        log.info("[  requiredInner.end]");
+        log.info("[  inner_Required.end]");
     }
 
+    @Transactional(propagation = Propagation.REQUIRES_NEW)
+    public void update_RequiresNew(String memberId, int money) {
+        log.info("[   update_RequiresNew.start");
+        txRepository.update(memberId, money);
+        log.info("[   update_RequiresNew.end");
+    }
 }

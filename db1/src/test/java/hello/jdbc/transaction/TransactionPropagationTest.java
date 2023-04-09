@@ -4,15 +4,19 @@ import com.zaxxer.hikari.HikariConfig;
 import com.zaxxer.hikari.HikariDataSource;
 import lombok.extern.slf4j.Slf4j;
 import org.assertj.core.api.Assertions;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.context.TestConfiguration;
 import org.springframework.context.annotation.Bean;
+import org.springframework.transaction.annotation.Transactional;
 
 import javax.sql.DataSource;
 import java.util.NoSuchElementException;
+import java.util.UUID;
 
 import static hello.jdbc.connection.ConnectionConst.*;
 
@@ -23,6 +27,21 @@ class TransactionPropagationTest {
     public final TxRepository txRepository;
     public final TxInnerService txInnerService;
     public final TxOuterService txOuterService;
+
+    private String memberId;
+
+    @BeforeEach
+    @Transactional
+    void before() {
+        memberId = "member" + UUID.randomUUID().toString().substring(0, 10);
+        txRepository.create(memberId, 0);
+    }
+
+    @AfterEach
+    @Transactional
+    void after() {
+        txRepository.delete(memberId);
+    }
 
     @Autowired
     public TransactionPropagationTest(TxRepository txRepository, TxInnerService txInnerService, TxOuterService txOuterService) {
@@ -99,6 +118,25 @@ class TransactionPropagationTest {
         Assertions.assertThatThrownBy(() -> {
             txOuterService.inDependsOnParentTransactions_OuterTxInnerTx(false, false, true);
         }).isInstanceOf(NoSuchElementException.class);
+    }
+
+    @Test
+    @DisplayName("REQUIRES_NEW, Non-Repeatable Read")
+    void test() {
+        printLog("Isolation_DEFAULT - Non-Repeatable Read: O");
+        txOuterService.nonRepeatableRead_Isolation_DEFAULT(memberId);
+
+        printLog("Isolation_READ_UNCOMMITTED - Non-Repeatable Read: O");
+        txOuterService.nonRepeatableRead_Isolation_READ_UNCOMMITTED(memberId);
+
+        printLog("Isolation_READ_COMMITTED - Non-Repeatable Read: O");
+        txOuterService.nonRepeatableRead_Isolation_READ_COMMITTED(memberId);
+
+        printLog("Isolation_REPEATABLE_READ - Non-Repeatable Read: X");
+        txOuterService.nonRepeatableRead_Isolation_REPEATABLE_READ(memberId);
+
+        printLog("Isolation_SERIALIZABLE - Non-Repeatable Read: X");
+        txOuterService.nonRepeatableRead_Isolation_SERIALIZABLE(memberId);
     }
 
     private static void printLog(String msg) {
