@@ -1,7 +1,12 @@
 package study.querydsl;
 
+import com.querydsl.core.BooleanBuilder;
 import com.querydsl.core.QueryResults;
 import com.querydsl.core.Tuple;
+import com.querydsl.core.types.ExpressionUtils;
+import com.querydsl.core.types.Predicate;
+import com.querydsl.core.types.Projections;
+import com.querydsl.core.types.dsl.BooleanExpression;
 import com.querydsl.core.types.dsl.CaseBuilder;
 import com.querydsl.core.types.dsl.Expressions;
 import com.querydsl.jpa.JPAExpressions;
@@ -15,13 +20,16 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.transaction.annotation.Transactional;
+import study.querydsl.dto.MemberDto;
+import study.querydsl.dto.QMemberDto;
+import study.querydsl.dto.UserDto;
 import study.querydsl.entity.Member;
 import study.querydsl.entity.QMember;
 import study.querydsl.entity.Team;
 
 import java.util.List;
 
-import static com.querydsl.jpa.JPAExpressions.*;
+import static com.querydsl.jpa.JPAExpressions.select;
 import static org.assertj.core.api.Assertions.assertThat;
 import static study.querydsl.entity.QMember.member;
 import static study.querydsl.entity.QTeam.team;
@@ -477,4 +485,213 @@ public class QueryDslBasicTest {
 
         assertThat(result).isEqualTo("member1_10");
     }
+
+    @Test
+    void simpleProjection() {
+        List<Tuple> result = queryFactory
+                .select(member.username, member.age)
+                .from(member)
+                .fetch();
+
+        for (Tuple tuple : result) {
+            String username = tuple.get(member.username);
+            Integer age = tuple.get(member.age);
+            log.info("username: {}", username);
+            log.info("age: {}", age);
+        }
+    }
+
+    /**
+     * 순수 JPA 에서 DTO 조회
+     * */
+    @Test
+    void findDtoByJPQL() {
+        List<MemberDto> result = em.createQuery("select new study.querydsl.dto.MemberDto(m.username, m.age) from Member m", MemberDto.class)
+                .getResultList();
+
+        for (MemberDto memberDto : result) {
+            log.info("memberDto: {}", memberDto);
+        }
+    }
+
+    // getter setter 필요
+    @Test
+    void findDtoBySetter() {
+        List<MemberDto> result = queryFactory
+                .select(Projections.bean(MemberDto.class,
+                        member.username,
+                        member.age))
+                .from(member)
+                .fetch();
+
+        for (MemberDto memberDto : result) {
+            log.info("memberDto: {}", memberDto);
+        }
+    }
+
+    // getter setter 필요 없음
+    @Test
+    void findDtoByFields() {
+        List<MemberDto> result = queryFactory
+                .select(Projections.fields(MemberDto.class,
+                        member.username,
+                        member.age))
+                .from(member)
+                .fetch();
+
+        for (MemberDto memberDto : result) {
+            log.info("memberDto: {}", memberDto);
+        }
+    }
+
+    @Test
+    void findDtoByConstructor() {
+        List<MemberDto> result = queryFactory
+                .select(Projections.constructor(MemberDto.class,
+                        member.username,
+                        member.age))
+                .from(member)
+                .fetch();
+
+        for (MemberDto memberDto : result) {
+            log.info("memberDto: {}", memberDto);
+        }
+    }
+
+    /**
+     * dto 의 필드와 가져온 이름이 다를때, as 로 이름 지정
+     * */
+    @Test
+    void findUserDtoByFields() {
+        QMember memberSub = new QMember("memberSub");
+
+        List<UserDto> result = queryFactory
+                .select(Projections.fields(UserDto.class,
+                        member.username.as("name"),
+                        ExpressionUtils.as(member.age, "age"),
+                        ExpressionUtils.as(
+                                JPAExpressions
+                                        .select(memberSub.age.max())
+                                        .from(memberSub), "age")
+                ))
+                .from(member)
+                .fetch();
+
+        for (UserDto userDto : result) {
+            log.info("userDto: {}", userDto);
+        }
+    }
+
+
+    /**
+     * findDtoByConstructor 와 비슷하지만,
+     * 생성자보다 값을 많이 넣어도, 컴파일 시점에서 오류를 잡을 수 있음.
+     * + 안전은 한데,
+     * */
+    @Test
+    void findDtoByQueryProjection() {
+        List<MemberDto> result = queryFactory
+                .select(new QMemberDto(member.username, member.age))
+                .from(member)
+                .fetch();
+
+        for (MemberDto memberDto : result) {
+            log.info("memberDto: {}", memberDto);
+        }
+    }
+
+    @Test
+    void dynamicQueryByBooleanBuilder() {
+        String usernameParam = "member1";
+        Integer ageParam = 10;
+
+        List<Member> result = searchMember1(usernameParam, ageParam);
+        assertThat(result).hasSize(1);
+    }
+
+    private List<Member> searchMember1(String usernameCond, Integer ageCond) {
+        BooleanBuilder builder = new BooleanBuilder();
+        if (usernameCond != null) {
+            builder.and(member.username.eq(usernameCond));
+        }
+        if (ageCond != null) {
+            builder.and(member.age.eq(ageCond));
+        }
+
+        return queryFactory
+                .selectFrom(member)
+                .where(builder)
+                .fetch();
+    }
+
+    @Test
+    void dynamicQueryByWhereParam() {
+        String usernameParam = "member1";
+        Integer ageParam = 10;
+
+        List<Member> result = searchMember2(usernameParam, ageParam);
+        assertThat(result).hasSize(1);
+    }
+
+    private List<Member> searchMember2(String usernameCond, Integer ageCond) {
+        return queryFactory
+                .selectFrom(member)
+                .where(usernameEq(usernameCond), ageCondEq(ageCond))
+                .fetch();
+    }
+
+    private BooleanExpression usernameEq(String usernameCond) {
+        if (usernameCond == null) {
+            // queryDsl 에서 where 절에 넘어간게 null 이면 무시.
+            return null;
+        }
+        return member.username.eq(usernameCond);
+    }
+
+    private BooleanExpression ageCondEq(Integer ageCond) {
+        return ageCond != null ? member.age.eq(ageCond) : null;
+    }
+
+    /**
+     * 공통적으로 사용되는 조건을 메서드로 빼두고 공통으로 사용할 수 있음.(서비스 가능 여부, 사용 가능한 쿠폰)
+     * 가독성을 높일 수 있음
+     * */
+    @Test
+    void dynamicQueryByWhereParamComposable() {
+        String usernameParam = "member1";
+        Integer ageParam = 10;
+
+        List<Member> members = queryFactory
+                .selectFrom(member)
+                .where(memberCondEq(usernameParam, ageParam))
+                .fetch();
+
+        List<MemberDto> memberDtos = queryFactory
+                .select(new QMemberDto(member.username, member.age))
+                .from(member)
+                .where(memberCondEq(usernameParam, ageParam))
+                .fetch();
+
+        List<UserDto> userDtos = queryFactory
+                .select(Projections.fields(UserDto.class,
+                        member.username.as("name"),
+                        member.age))
+                .from(member)
+                .where(memberCondEq(usernameParam, ageParam))
+                .fetch();
+
+        assertThat(members).extracting("username").containsExactly(usernameParam);
+        assertThat(members).extracting("age").containsExactly(ageParam);
+        assertThat(memberDtos).extracting("username").containsExactly(usernameParam);
+        assertThat(memberDtos).extracting("age").containsExactly(ageParam);
+        assertThat(userDtos).extracting("name").containsExactly(usernameParam);
+        assertThat(userDtos).extracting("age").containsExactly(ageParam);
+    }
+
+    private BooleanExpression memberCondEq(String usernameCond, Integer ageCond) {
+        return member.id.eq(member.id) // Null 체크 필요하다길래 1=1 처럼 항상 참인거 일단 넣어둠.
+                .and(usernameEq(usernameCond))
+                .and(ageCondEq(ageCond));
+    }
 }
+
