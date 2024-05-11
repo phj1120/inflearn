@@ -15,9 +15,11 @@ import jakarta.persistence.EntityManagerFactory;
 import jakarta.persistence.PersistenceContext;
 import jakarta.persistence.PersistenceUnit;
 import lombok.extern.slf4j.Slf4j;
+import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.test.annotation.Commit;
 import org.springframework.transaction.annotation.Transactional;
 import study.querydsl.dto.MemberDto;
 import study.querydsl.dto.QMemberDto;
@@ -692,5 +694,167 @@ public class QueryDslBasicTest {
                 .and(usernameEq(usernameCond))
                 .and(ageCondEq(ageCond));
     }
+
+    @Test
+    void bulkUpdate() {
+        long count = queryFactory
+                .update(member)
+                .set(member.username, "비회원")
+                .where(member.age.lt(20))
+                .execute();
+        // 이렇게 업데이트를 치면, 영속성 컨텍스트와 DB 값이 달라질 수 있음.
+        // queryFactory 로 다시 조회해와 둘의 값이 달라도 영속성 컨텍스트의 값을 우선으로 함.(Repeatable Read)
+        // => 벌크 연산을 한다면 영속성 컨텍스트를 초기화 해라.
+        em.flush();
+        em.clear();
+    }
+
+    /**
+     * DB와 1차 캐시의 값이 다르면, 1차 캐시의 값에 우선권이 있다.(repeatableRead)
+     * */
+    @Test
+    void persistenceContextAndDataBase() {
+        em.flush();
+        em.clear();
+
+        log.info("\n/* findMembersByBefore */");
+        List<Member> findMembersByBefore = queryFactory
+                .selectFrom(member)
+                .fetch();
+
+        log.info("\n/* bulkUpdate */");
+        // bulk Update
+        long count = queryFactory
+                .update(member)
+                .set(member.age, member.age.add(1))
+                .execute();
+
+        log.info("\n/* findMembersByAfterDirectUpdate */");
+        List<Member> findMembersByAfterDirectUpdate = queryFactory
+                .selectFrom(member)
+                .fetch();
+
+        em.flush();
+        em.clear();
+
+        log.info("\n/* findMembersByAfterClear */");
+        List<Member> findMembersByAfterClear = queryFactory
+                .selectFrom(member)
+                .fetch();
+
+        for (int i = 0; i < findMembersByBefore.size(); i++) {
+            int findAgeByAfterDirectUpdate = findMembersByAfterDirectUpdate.get(i).getAge();
+            int findAgeByAfterClear = findMembersByAfterClear.get(i).getAge();
+            assertThat(findAgeByAfterDirectUpdate).isNotEqualTo(findAgeByAfterClear);
+        }
+    }
+
+    /**
+     * Entity 값 변경, QueryFactory Update 를 섞어서 쓰면 데이터가 꼬이지 않을까?
+     * => QueryFactory Update 하기 전에 변경 감지로 Entity 의 정보가 다 Update 되기 때문에 데이터가 꼬이진 않음.
+     * => 대신 QueryFactory Update 후 영속성 컨텍스를 비운 후 재조회 하지 않으면, Entity 와 DB 의 상태가 달라질 수 있다.
+     */
+    @Test
+    void bulkUpdateAndDirtyCheck() {
+        em.flush();
+        em.clear();
+
+        int CHANGE_IN_QUERY_AGE = 20;
+        int CHANGE_IN_ENTITY_AGE = 100;
+        String CHANGE_IN_ENTITY_USERNAME = "TEMP";
+
+        // DB 에 있는 값을 조회해 온다.
+        log.info("\n/* findMembersByBefore */");
+        List<Member> findMembersByBefore = queryFactory
+                .selectFrom(member)
+                .fetch();
+        for (Member member : findMembersByBefore) {
+            member.setAge(CHANGE_IN_ENTITY_AGE);
+            member.setUsername(CHANGE_IN_ENTITY_USERNAME);
+        }
+
+        // => 변경 감지 실행 됨.
+        // 지금까지 변경 된 사항이 DB 에 적용이 된다.
+
+        log.info("\n/* bulk Update */");
+        long count = queryFactory
+                .update(member)
+                .set(member.age, CHANGE_IN_QUERY_AGE)
+                .execute();
+
+        // 아직 영속성 컨텍스트를 비우지 않았으므로, 영속성 컨텍스트에 있는 값이 조회 된다.
+        log.info("\n/* findMembersByAfterQuery */");
+        List<Member> findMembersByAfterQuery = queryFactory
+                .selectFrom(member)
+                .fetch();
+        for (Member member : findMembersByAfterQuery) {
+            assertThat(member.getAge()).isEqualTo(CHANGE_IN_ENTITY_AGE);
+            assertThat(member.getUsername()).isEqualTo(CHANGE_IN_ENTITY_USERNAME);
+        }
+
+        // 변경 된 사항에 대해, 변경 감지가 이미 실행 되었으므로, 추가로 쿼리가 날라가지 않는다.
+        log.info("\n/* flush, clear */");
+        em.flush();
+        em.clear();
+
+        // 영속성 컨텍스트가 비어있으므로, 실제 DB 에 저장 된 값이 조회 된다.
+        log.info("\n/* findMembersByAfterClear */");
+        List<Member> findMembersByAfterClear = queryFactory
+                .selectFrom(member)
+                .fetch();
+        for (Member member : findMembersByAfterClear) {
+            assertThat(member.getAge()).isEqualTo(CHANGE_IN_QUERY_AGE);
+            assertThat(member.getUsername()).isEqualTo(CHANGE_IN_ENTITY_USERNAME);
+        }
+    }
+
+    @Test
+    public void bulkDelete() {
+        long count = queryFactory
+                .delete(member)
+                .where(member.age.loe(18))
+                .execute();
+    }
+
+    /**
+     * username 의 member 를 m 으로 바꿔서 가져옴
+     *
+     * 현재 세팅 된 Dialect 에 있는 function 들만 사용 가능.
+     * Custom Function 을 사용하고 싶으면,
+     * Dialect 를 상속 받는 구현체를 만들고 거기다가 등록 한 다음 해당 구현체로 세팅
+     */
+    @Test
+    void SqlFunction() {
+        List<String> result = queryFactory
+                .select(Expressions
+                        .stringTemplate("function('replace', {0}, {1}, {2})",
+                                member.username, "member", "M"))
+                .from(member)
+                .fetch();
+
+        for (String username : result) {
+            log.info("username: {}", username);
+        }
+    }
+
+    /**
+     * username 이 모두 소문자인 회원 조회
+     * */
+    @Test
+    void SqlFunction2() {
+        List<String> result = queryFactory
+                .select(member.username)
+                .from(member)
+//                .where(member.username.eq(Expressions.stringTemplate(
+//                        "function('lower', {0})", member.username
+//                )))
+                .where(member.username.eq(member.username.lower()))
+                .fetch();
+
+        for (String username : result) {
+            log.info("username: {}", username);
+        }
+    }
+
 }
 
