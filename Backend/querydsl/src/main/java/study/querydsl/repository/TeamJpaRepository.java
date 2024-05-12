@@ -5,7 +5,6 @@ import jakarta.persistence.EntityManager;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Repository;
-import study.querydsl.entity.QTeam;
 import study.querydsl.entity.Team;
 
 import java.util.Optional;
