@@ -9,6 +9,8 @@ import study.querydsl.dto.MemberSearchCondition;
 import study.querydsl.dto.MemberTeamDto;
 import study.querydsl.entity.Member;
 import study.querydsl.entity.Team;
+import study.querydsl.repository.member.MemberJpaRepository;
+import study.querydsl.repository.team.TeamJpaRepository;
 
 import java.util.List;
 
