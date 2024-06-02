@@ -6,7 +6,7 @@ export default defineNuxtConfig({
     shim: false,
     typeCheck: true,
   },
-  modules: ['nuxt-quasar-ui'],
+  modules: ['nuxt-quasar-ui', '@pinia/nuxt'],
   quasar: {
     /* */
   },
@@ -22,4 +22,5 @@ export default defineNuxtConfig({
     global: true,
     dirs: ['~/components'],
   },
+  ssr: true
 });
