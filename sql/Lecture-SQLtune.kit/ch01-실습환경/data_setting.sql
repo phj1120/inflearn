@@ -113,3 +113,18 @@ SELECT 'LOADING sal5.sql' as 'INFO';
 source sal5.sql ;
 SELECT 'LOADING sal6.sql' as 'INFO';
 source sal6.sql ;
+
+/**
+mac terminal 에서 해당 위치로 들어간 후.
+mysql -u parkh -p tuning < emp.sql ;
+mysql -u parkh -p tuning < dept.sql ;
+mysql -u parkh -p tuning < emp_hist1.sql ;
+mysql -u parkh -p tuning < emp_hist2.sql ;
+mysql -u parkh -p tuning < grade.sql ;
+mysql -u parkh -p tuning < sal1.sql ;
+mysql -u parkh -p tuning < sal2.sql ;
+mysql -u parkh -p tuning < sal3.sql ;
+mysql -u parkh -p tuning < sal4.sql ;
+mysql -u parkh -p tuning < sal5.sql ;
+mysql -u parkh -p tuning < sal6.sql ;
+ */
