@@ -21,4 +21,16 @@ public class Lec05Main {
     System.out.println("주어지는 숫자는 홀수입니다");
   }
 
+  String getPassOrFail(Integer score) {
+    return score >= 50 ? "P" : "F";
+
+//    return if(score >= 50) {
+//      "P"
+//    } else {
+//      "F"
+//    }
+  }
+
+
 }
+
